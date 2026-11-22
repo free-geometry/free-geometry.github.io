@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Free Geometry</title>
+  <meta name="description" content="Free Geometry: Refining 3D Reconstruction from Stronger Versions of Itself. Test-time self-evolution of feed-forward 3D reconstruction models without 3D ground truth.">
+  <meta name="keywords" content="Free Geometry, test-time adaptation, VGGT, Depth Anything 3, 3D reconstruction, self-distillation">
+  <meta property="og:title" content="Free Geometry: Refining 3D Reconstruction from Stronger Versions of Itself">
+  <meta property="og:description" content="Feed-forward 3D reconstruction models that self-evolve at test time, without 3D ground truth.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://free-geometry.github.io/">
+  <meta property="og:image" content="https://free-geometry.github.io/static/images/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Free Geometry: frozen vs. adapted VGGT point map of a ScanNet++ room, top view">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Free Geometry: Refining 3D Reconstruction from Stronger Versions of Itself">
+  <meta name="twitter:image" content="https://free-geometry.github.io/static/images/og.jpg">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="static/images/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="static/images/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1.9.4/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/main.css">
+  <link rel="stylesheet" href="static/css/public.css">
+  <link rel="preload" as="image" href="static/images/teaser_vggt_frozen.webp">
+  <link rel="preload" as="image" href="static/images/teaser_vggt_ours.webp">
+  <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+
+<!-- ==================== SECTION NAV (appears after the header) ==================== -->
+<nav class="secnav" id="secnav" aria-label="Sections">
+  <div class="secnav-inner">
+    <a href="#top" class="secnav-brand"><span class="fg-free">Free</span> <span class="fg-geo">Geometry</span></a>
+    <div class="secnav-links">
+      <a href="#video">Video</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#compare">Compare</a>
+      <a href="#studio">Studio</a>
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#bibtex">BibTeX</a>
+    </div>
+    <button class="kbar-btn" id="kbar-open" type="button" aria-label="Open command palette"><i class="fas fa-magnifying-glass"></i><kbd>Ctrl K</kbd></button>
+  </div>
+</nav>
+<div class="progress" id="progress" aria-hidden="true"><span></span></div>
+<nav class="rail" id="rail" aria-label="Section progress"></nav>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero hero-top" id="top">
+  <div class="hero-blobs" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <img class="hero-mark" src="static/images/favicon.svg" alt="" width="64" height="64">
+      <h1 class="title publication-title hero-title"><span class="fg-free">Free</span> <span class="fg-geo">Geometry</span></h1>
+      <h3 class="title is-3 publication-title hero-sub">Refining 3D Reconstruction from Stronger Versions of Itself</h3>
+      <div class="is-size-5 publication-authors" id="authors"></div>
+      <div class="is-size-6 publication-authors venue" id="venue"></div>
+      <div class="publication-links" id="links"></div>
+    </div>
+    <div class="hero-stage" id="hero-stage">
+      <canvas id="hero-cloud" aria-label="Point map of VGGT on a ScanNet++ room, frozen and with Free Geometry; drag to rotate"></canvas>
+      <div class="hero-chips" aria-hidden="true"><span class="chip-f" id="hero-chip-f">Frozen</span><span class="chip-o" id="hero-chip-o">+ Free Geometry</span></div>
+      <div class="hero-legend" aria-hidden="true"><i></i>point error ≥ 3%</div>
+      <button class="hero-note" id="hero-note" type="button" hidden></button>
+    </div>
+  </div>
+  <a class="hero-down" href="#teaser" aria-label="Scroll down"><i class="fas fa-chevron-down"></i></a>
+</section>
+
+<!-- ==================== TEASER (hero media) ==================== -->
+<section class="hero teaser" id="teaser">
+  <div class="container is-max-widescreen">
+    <div class="hero-body teaser-body">
+      <div class="teaser-frame">
+        <div class="teaser-head">
+          <div class="tabs is-toggle is-small model-tabs" id="teaser-tabs">
+            <ul>
+              <li class="is-active" data-k="vggt"><a>VGGT</a></li>
+              <li data-k="da3"><a>DA3-G</a></li>
+            </ul>
+          </div>
+          <button class="button is-small lens-btn" id="teaser-lens" type="button" title="Magnifier" aria-label="Magnifier"><span class="icon"><i class="fas fa-magnifying-glass-plus"></i></span></button>
+        </div>
+        <div class="ba ba-hero" id="teaser-ba"></div>
+      </div>
+      <div class="keynums" id="keynums">
+        <div><b data-num="NumMeanRelAUC"></b><span>AUC@3 gain</span></div>
+        <div><b data-num="NumMeanRelFone"></b><span>inlier-ratio gain</span></div>
+        <div><b>5 × 4</b><span>models × datasets</span></div>
+        <div><b>~2 min</b><span>per scene</span></div>
+        <div><b>0</b><span>3D labels</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== TL;DR ==================== -->
+<section class="section tldr-section">
+  <div class="container is-max-desktop">
+    <div class="tldr-banner">
+      <strong>TL;DR</strong>: a 3D foundation model becomes <strong>its own teacher at test time</strong>: a consensus of its own passes supervises masked views, and only the normalization layers are trained.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== VIDEO ==================== -->
+<section class="section video-section" id="video">
+  <div class="container is-max-widescreen">
+    <div class="vid-frame" id="vid-frame">
+      <video id="promo" playsinline preload="none" poster="static/video/poster.jpg" width="1920" height="1080">
+        <source src="static/video/free_geometry.mp4" type="video/mp4">
+        <source src="static/video/free_geometry.webm" type="video/webm">
+      </video>
+      <button class="vid-play" id="vid-play" type="button" aria-label="Play the video"><span class="vid-ring"></span><i class="fas fa-play"></i></button>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ABSTRACT ==================== -->
+<section class="section section-alt" id="abstract">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Feed-forward 3D reconstruction models are efficient but rigid: once trained, they run zero-shot and cannot adapt to the test scene.
+            As a result, plausible-looking reconstructions often contain errors under domain shifts, occlusions, specularities and ambiguous cues.
+            To address this, we introduce <strong>Free Geometry</strong>, a framework that enables feed-forward 3D reconstruction models to self-evolve at test time without any 3D ground truth or offline retraining.
+            Our key insight is that a model can become its own teacher at test time. When given more views, the model produces more geometrically consistent reconstructions.
+            Aggregating multiple such predictions across different reference frames and view subsets further improves their accuracy and reliability, forming a stronger consensus teacher.
+            Leveraging this property, given a test sequence, we mask different subsets of it to construct multiple partial observations.
+            Free Geometry then adapts the model by enforcing camera pose and depth consistency between these partial-view predictions and the teacher's consensus.
+            By updating only the normalization layers, this self-supervision enables fast scene-specific adaptation in about two minutes on a single GPU.
+            Our approach improves five state-of-the-art foundation models on four datasets, yielding average relative gains of <span data-num="NumMeanRelAUC"></span> in camera pose accuracy (AUC@3) and <span data-num="NumMeanRelFone"></span> in point map accuracy (inlier ratio).
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== COMPARISON GALLERY (3D point maps + 2D error maps) ==================== -->
+<section class="section" id="compare">
+  <div class="container gal-container">
+    <h2 class="title is-3 has-text-centered">Frozen vs. Free Geometry</h2>
+    <div class="gal-bar">
+      <div class="gal-modes" id="gal-modes" role="tablist" aria-label="Colouring">
+        <button type="button" role="tab" data-m="rgb">Colour</button>
+        <button type="button" role="tab" data-m="err">Error</button>
+        <button type="button" role="tab" data-m="out" class="is-active">Outliers</button>
+      </div>
+      <div class="gal-legend" id="gal-legend" aria-hidden="true"></div>
+    </div>
+    <h3 class="gal-row-title">Point maps</h3>
+    <div class="gal-row" id="gal-3d"></div>
+    <h3 class="gal-row-title">Per-pixel error</h3>
+    <div class="gal-row" id="gal-2d"></div>
+  </div>
+</section>
+<div class="gal-modal" id="gal-modal" hidden role="dialog" aria-modal="true" aria-label="Point map, large">
+  <div class="gal-modal-box"><div class="gal-modal-head" id="gal-modal-head"></div><div class="gview gview-big" id="gal-modal-view"></div>
+    <button class="delete is-large gal-modal-x" id="gal-modal-x" aria-label="close"></button></div>
+</div>
+
+<!-- ==================== SCENE STUDIO ==================== -->
+<section class="section section-alt" id="studio">
+  <div class="container gal-container">
+    <h2 class="title is-3 has-text-centered">Inside one scene</h2>
+    <div class="st-bar">
+      <div class="gb-scenes st-scenes" id="st-scenes"></div>
+      <div class="gal-modes" id="st-modes" role="tablist" aria-label="Colouring">
+        <button type="button" data-m="rgb">Colour</button><button type="button" data-m="err">Error</button><button type="button" data-m="out" class="is-active">Outliers</button>
+      </div>
+    </div>
+    <div class="st-grid">
+      <div class="st-left">
+        <div class="st-view" id="st-view">
+          <div class="st-tools">
+            <button type="button" class="st-icon is-on" id="st-cams" title="Cameras" aria-label="Show cameras"><i class="fas fa-video"></i></button>
+            <button type="button" class="st-icon" id="st-reset" title="Reset view" aria-label="Reset view"><i class="fas fa-rotate-left"></i></button>
+          </div>
+          <div class="gv-load"><span></span></div>
+        </div>
+        <div class="st-stage">
+          <div class="st-stops" id="st-stops">
+            <button type="button" class="is-active" data-s="F"><i></i>Frozen</button><button type="button" data-s="T"><i></i>Teacher</button><button type="button" data-s="O"><i></i>Ours</button><button type="button" data-s="G"><i></i>GT</button>
+          </div>
+          <input type="range" id="st-t" min="0" max="3" step="0.001" value="0" aria-label="Prediction: frozen, teacher, ours, ground truth">
+        </div>
+      </div>
+      <div class="st-right">
+        <div class="st-frame-wrap"><canvas id="st-frame" width="259" height="175" aria-label="Frame; click to probe a pixel"></canvas><span class="gv-tag l" id="st-ftag">Frozen</span><i class="fas fa-crosshairs st-cross" aria-hidden="true"></i></div>
+        <div class="st-probe" id="st-probe"></div>
+        <div class="st-frow">
+          <button type="button" class="st-icon" id="st-play" aria-label="Play frames"><i class="fas fa-play"></i></button>
+          <input type="range" id="st-f" min="1" max="32" step="1" value="1" aria-label="Frame">
+          <span class="st-fnum" id="st-fnum">1 / 32</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== METHOD ==================== -->
+<section class="section" id="method">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full">
+        <h2 class="title is-3">Method</h2>
+        <div class="content">
+          <div class="arch-scrolly" id="arch-scrolly"><div class="arch-sticky" id="arch-sticky">
+          <div class="arch-progress" aria-hidden="true"><span id="arch-bar"></span><em id="arch-count"></em></div>
+          <div class="arch" id="arch">
+            <img src="static/images/arch_v8.webp" alt="Architecture of Free Geometry" loading="lazy" width="2400" height="934">
+            <div class="arch-spot" aria-hidden="true"></div>
+          </div>
+          <ol class="arch-steps" id="arch-steps">
+            <li data-r="1.2,1.5,14.6,37"><b>All <i>N</i> frames</b></li>
+            <li data-r="15.3,1.2,61.4,45.5"><b>16 frozen passes</b></li>
+            <li data-r="61.4,1.2,98.4,45.5"><b>Consensus teacher</b></li>
+            <li data-r="0.4,40.5,15.6,91.5"><b>Masked views, <i>M</i> = <i>N</i>/2</b></li>
+            <li data-r="21.2,46.5,61.4,98.6"><b>Norm layers only</b></li>
+            <li data-r="72,44.5,98.4,98.6"><b>Pose + depth losses</b></li>
+          </ol>
+          </div></div>
+        </div>
+      </div>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-7">
+        <figure class="paper-fig zoomable"><img src="static/images/views_ensemble.webp" alt="More views and a self-ensemble make the frozen model a stronger teacher" loading="lazy"></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== RESULTS ==================== -->
+<section class="section section-alt" id="results">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Experiments</h2>
+    <div class="tabs is-toggle is-small is-centered model-tabs" id="rel-tabs">
+      <ul>
+        <li class="is-active" data-k="0"><a>VGGT</a></li>
+        <li data-k="1"><a>DA3-G</a></li>
+      </ul>
+    </div>
+    <div class="columns chart-row is-multiline">
+      <div class="column is-half-tablet is-one-quarter-desktop"><div class="chart-subtitle">AUC@3 <span class="dir-hint">↑</span></div><div class="chart-wrap"><canvas id="ch-auc3"></canvas></div></div>
+      <div class="column is-half-tablet is-one-quarter-desktop"><div class="chart-subtitle">AUC@30 <span class="dir-hint">↑</span></div><div class="chart-wrap"><canvas id="ch-auc30"></canvas></div></div>
+      <div class="column is-half-tablet is-one-quarter-desktop"><div class="chart-subtitle">Rel. L2 <span class="dir-hint">↓</span></div><div class="chart-wrap"><canvas id="ch-rel"></canvas></div></div>
+      <div class="column is-half-tablet is-one-quarter-desktop"><div class="chart-subtitle">Inlier ratio <span class="dir-hint">↑</span></div><div class="chart-wrap"><canvas id="ch-ir"></canvas></div></div>
+    </div>
+
+    <div class="table-block">
+      <div class="tabs is-boxed is-small table-tabs" data-group="t1">
+        <ul>
+          <li class="is-active" data-pane="t1-pose"><a>Camera pose</a></li>
+          <li data-pane="t1-pmap"><a>Point map</a></li>
+        </ul>
+      </div>
+      <div class="table-pane is-active" id="t1-pose"></div>
+      <div class="table-pane" id="t1-pmap"></div>
+    </div>
+
+    <div class="explorer spot" id="explorer">
+      <div class="explorer-bar">
+        <div class="buttons has-addons" id="ex-models"></div>
+        <div class="buttons has-addons" id="ex-metrics"></div>
+      </div>
+      <div class="explorer-chart"><canvas id="ex-chart"></canvas></div>
+    </div>
+
+    <div class="table-block">
+      <div class="tabs is-boxed is-small table-tabs" data-group="t2">
+        <ul>
+          <li class="is-active" data-pane="t-gen"><a>Other models</a></li>
+          <li data-pane="t-ood"><a>Out of domain</a></li>
+          <li data-pane="t-hard"><a>Challenging scenes</a></li>
+        </ul>
+      </div>
+      <div class="table-pane is-active" id="t-gen"></div>
+      <div class="table-pane" id="t-ood"></div>
+      <div class="table-pane" id="t-hard"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PAPER FIGURES ==================== -->
+<section class="section section-alt" id="figures">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">More results</h2>
+    <div class="tabs is-boxed is-small table-tabs" data-group="figs">
+      <ul>
+        <li class="is-active" data-pane="fig-main"><a>Point clouds</a></li>
+        <li data-pane="fig-pts"><a>Per-pixel error</a></li>
+        <li data-pane="fig-models"><a>Other models</a></li>
+        <li data-pane="fig-ood"><a>Out of domain</a></li>
+        <li data-pane="fig-hard"><a>Challenging scenes</a></li>
+      </ul>
+    </div>
+    <div class="table-pane is-active" id="fig-main"><figure class="paper-fig zoomable"><img data-src="static/images/qual_main.webp" alt="Point clouds before and after Free Geometry"></figure></div>
+    <div class="table-pane" id="fig-pts"><figure class="paper-fig zoomable"><img data-src="static/images/qual_ptserr.webp" alt="Per-pixel point-map error"></figure></div>
+    <div class="table-pane" id="fig-models"><figure class="paper-fig zoomable narrow"><img data-src="static/images/qual_models.webp" alt="Other feed-forward models"></figure></div>
+    <div class="table-pane" id="fig-ood"><figure class="paper-fig zoomable"><img data-src="static/images/qual_ood.webp" alt="Out-of-domain scenes"></figure></div>
+    <div class="table-pane" id="fig-hard"><figure class="paper-fig zoomable narrow"><img data-src="static/images/qual_hard.webp" alt="Challenging scenes"></figure></div>
+  </div>
+</section>
+
+<!-- ==================== BIBTEX ==================== -->
+<section class="section" id="bibtex">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <div class="bib-wrap">
+      <button class="button is-small bib-copy" id="bib-copy"><span class="icon"><i class="far fa-copy"></i></span><span>Copy</span></button>
+      <pre><code id="bib-code"></code></pre>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container has-text-centered">
+    <div class="content foot-note">
+      † 95% CI above zero against the best baseline · Outliers: point error ≥ 3%, the threshold of the inlier ratio.<br>
+      Template adapted from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> and <a href="https://self-evo.github.io">SelfEvo</a>.<br>
+      Music in the video: "Impact Allegretto" Kevin MacLeod (<a href="https://incompetech.com">incompetech.com</a>), licensed under <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons: By Attribution 4.0 License</a>.
+    </div>
+  </div>
+</footer>
+
+<div class="kbar" id="kbar" hidden role="dialog" aria-modal="true" aria-label="Command palette">
+  <div class="kbar-box">
+    <div class="kbar-in"><i class="fas fa-magnifying-glass"></i><input id="kbar-q" type="text" placeholder="Jump to a section, scene or action…" autocomplete="off" spellcheck="false"><kbd>Esc</kbd></div>
+    <ul class="kbar-list" id="kbar-list" role="listbox"></ul>
+    <div class="kbar-foot"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>Enter</kbd> run</span><span><kbd>J</kbd>/<kbd>K</kbd> next / previous section</span><span><kbd>/</kbd> open</span></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="lightbox" id="lightbox" hidden><img alt=""><button class="delete is-large" aria-label="close"></button></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="static/js/site.js"></script>
+<script src="static/data/tables.js"></script>
+<script src="static/data/errmaps.js"></script>
+<script src="static/data/gallery.js"></script>
+<script src="static/data/studio.js"></script>
+<script src="static/js/main.js"></script>
+<script src="static/js/fx.js"></script>
+<script src="static/js/fx_public.js"></script>
+<script type="module" src="static/js/hero.js"></script>
+<script type="module" src="static/js/gallery.js"></script>
+<script type="module" src="static/js/studio.js"></script>
+</body>
+</html>
